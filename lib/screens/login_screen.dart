@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'school_selection_screen.dart';
+import 'package:absensi_siswa/services/school_config.dart';
 import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,6 +14,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String _schoolName = '';
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController nisnController = TextEditingController();
@@ -19,7 +22,17 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSchoolInfo();
     _checkExistingToken();
+  }
+
+  Future<void> _loadSchoolInfo() async {
+    final school = await SchoolConfig.getSelectedSchool();
+    if (mounted && school != null) {
+      setState(() {
+        _schoolName = school.name;
+      });
+    }
   }
 
   Future<void> _checkExistingToken() async {
@@ -76,6 +89,47 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Future<void> _changeSchool() async {
+    // Tampilkan konfirmasi
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ganti Sekolah'),
+        content: const Text(
+          'Apakah Anda yakin ingin mengganti sekolah? '
+          'Data login Anda akan dihapus.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Ya, Ganti',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      // Hapus data login dan pilihan sekolah
+      await ApiService.clearAllData();
+      await SchoolConfig.clearSelectedSchool();
+
+      if (mounted) {
+        // Kembali ke School Selection
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SchoolSelectionScreen()),
+        );
+      }
+    }
+  }
+
   void _showMessage(String message, {required bool isError}) {
     if (!mounted) return;
     
@@ -116,30 +170,82 @@ class _LoginScreenState extends State<LoginScreen> {
                 // ===== HEADER =====
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Icon(Icons.school, size: 48),
-                        SizedBox(height: 16),
-                        Text(
-                          'Hello!',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Icon(Icons.school, size: 48),
+                          // Tombol Ganti Sekolah
+                          TextButton.icon(
+                            onPressed: _isLoading ? null : _changeSchool,
+                            icon: const Icon(
+                              Icons.swap_horiz,
+                              size: 18,
+                              color: Colors.black87,
+                            ),
+                            label: const Text(
+                              'Ganti',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Hello!',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Welcome Student',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Welcome Student',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      if (_schoolName.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                size: 16,
+                                color: Colors.black87,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  _schoolName,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
 

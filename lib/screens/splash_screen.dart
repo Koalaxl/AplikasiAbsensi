@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'school_selection_screen.dart';
 import 'login_screen.dart';
+import 'home_screen.dart';
+import '../services/api_service.dart';
+import '../services/school_config.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -32,19 +36,49 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 5), _goToLogin);
+    // Update: Check school selection and login status
+    Future.delayed(const Duration(seconds: 5), _checkInitialRoute);
   }
 
-  void _goToLogin() {
+  // New method: Check routing based on school selection and login status
+  Future<void> _checkInitialRoute() async {
+    if (!mounted) return;
+
+    // 1. Cek apakah sudah memilih sekolah
+    final hasSchool = await SchoolConfig.hasSelectedSchool();
+
+    if (!hasSchool) {
+      // Belum pilih sekolah -> ke School Selection
+      _navigateTo(const SchoolSelectionScreen());
+      return;
+    }
+
+    // 2. Sudah pilih sekolah, cek apakah sudah login
+    final isLoggedIn = await ApiService.isLoggedIn();
+
+    if (!mounted) return;
+
+    if (isLoggedIn) {
+      // Sudah login -> ke Home
+      _navigateTo(const HomeScreen());
+    } else {
+      // Belum login -> ke Login
+      _navigateTo(const LoginScreen());
+    }
+  }
+
+  // Updated navigation method with same animation
+  void _navigateTo(Widget destination) {
+    if (!mounted) return;
+    
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, __, ___) => const LoginScreen(),
+        pageBuilder: (_, __, ___) => destination,
         transitionsBuilder: (_, animation, __, child) {
           final curved =
               CurvedAnimation(parent: animation, curve: Curves.easeInOut);
-
           return FadeTransition(
             opacity: curved,
             child: SlideTransition(
@@ -77,13 +111,11 @@ class _SplashScreenState extends State<SplashScreen>
             right: -140,
             child: _circle(300),
           ),
-
           Positioned(
             bottom: -160,
             left: -160,
             child: _circle(340),
           ),
-
           Center(
             child: FadeTransition(
               opacity: _fadeAnimation,

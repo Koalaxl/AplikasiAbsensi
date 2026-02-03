@@ -1,24 +1,40 @@
+import 'school_config.dart';
+
 class ApiConfig {
   // =====================
-  // BASE URL API LARAVEL
+  // GET DYNAMIC BASE URL
   // =====================
-  static const String baseUrl = 'https://projekb3.skyznode.my.id/api';
+  static Future<String> getBaseUrl() async {
+    final school = await SchoolConfig.getSelectedSchool();
+    
+    // Fallback ke testing jika belum ada sekolah yang dipilih
+    return school?.baseUrl ?? 'https://projekb3.skyznode.my.id/api';
+  }
 
   // =====================
-  // ENDPOINT
+  // ENDPOINT (tetap sama)
   // =====================
   static const String loginEndpoint = '/login';
   static const String kehadiranEndpoint = '/kehadiran';
   static const String logoutEndpoint = '/logout';
-  // ❌ ENDPOINT /me DIHAPUS
 
   // =====================
-  // FULL URL HELPERS
+  // FULL URL HELPERS (async karena perlu get baseUrl)
   // =====================
-  static String get loginUrl => '$baseUrl$loginEndpoint';
-  static String get kehadiranUrl => '$baseUrl$kehadiranEndpoint';
-  static String get logoutUrl => '$baseUrl$logoutEndpoint';
-  // ❌ meUrl DIHAPUS
+  static Future<String> get loginUrl async {
+    final base = await getBaseUrl();
+    return '$base$loginEndpoint';
+  }
+
+  static Future<String> get kehadiranUrl async {
+    final base = await getBaseUrl();
+    return '$base$kehadiranEndpoint';
+  }
+
+  static Future<String> get logoutUrl async {
+    final base = await getBaseUrl();
+    return '$base$logoutEndpoint';
+  }
 
   // =====================
   // TIMEOUT DURATION

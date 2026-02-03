@@ -25,9 +25,12 @@ class ApiService {
     required String nisn,
   }) async {
     try {
+      // Get dynamic login URL
+      final loginUrl = await ApiConfig.loginUrl;
+      
       final response = await http
           .post(
-            Uri.parse(ApiConfig.loginUrl),
+            Uri.parse(loginUrl),
             headers: ApiConfig.headers(),
             body: json.encode({
               'nama_siswa': nama,
@@ -96,9 +99,12 @@ class ApiService {
 
       if (token != null) {
         try {
+          // Get dynamic logout URL
+          final logoutUrl = await ApiConfig.logoutUrl;
+          
           await http
               .post(
-                Uri.parse(ApiConfig.logoutUrl),
+                Uri.parse(logoutUrl),
                 headers: ApiConfig.authHeaders(token),
               )
               .timeout(ApiConfig.timeout);
@@ -132,9 +138,6 @@ class ApiService {
     }
   }
 
-  // ❌ METHOD getMe() DIHAPUS
-  // Tidak digunakan karena data siswa sudah tersimpan saat login
-
   // =====================
   // GET KEHADIRAN
   // =====================
@@ -150,9 +153,12 @@ class ApiService {
         };
       }
 
+      // Get dynamic kehadiran URL
+      final kehadiranUrl = await ApiConfig.kehadiranUrl;
+
       final response = await http
           .get(
-            Uri.parse(ApiConfig.kehadiranUrl),
+            Uri.parse(kehadiranUrl),
             headers: ApiConfig.authHeaders(token),
           )
           .timeout(ApiConfig.timeout);
@@ -216,7 +222,6 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(ApiConfig.tokenKey);
       // Cukup cek token ada atau tidak
-      // TIDAK perlu panggil /me untuk validasi
       return token != null && token.isNotEmpty;
     } catch (e) {
       print('Error checking login status: $e');
