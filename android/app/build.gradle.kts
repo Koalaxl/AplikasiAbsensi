@@ -42,3 +42,12 @@ android {
 flutter {
     source = "../.."
 }
+
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+
+    // TAMBAHKAN INI
+    id("com.google.gms.google-services")
+}

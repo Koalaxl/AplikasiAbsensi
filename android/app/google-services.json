@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "911429912004",
+    "project_id": "absensi-sekolah-47534",
+    "storage_bucket": "absensi-sekolah-47534.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:911429912004:android:8daaf072cef1aade671091",
+        "android_client_info": {
+          "package_name": "com.example.absensi_siswa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBW6llh4Lo-kp6LCai2PIH3dVlMAaGr0cA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,4 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'login_screen.dart';
 import 'school_selection_screen.dart';
 import 'package:absensi_siswa/services/school_config.dart';
@@ -26,6 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasMoreData = false;
 
   final ScrollController _scrollController = ScrollController();
+  
+  // Auto refresh timer
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -33,12 +40,59 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadSchoolInfo();
     _loadKehadiran();
     _scrollController.addListener(_onScroll);
+    
+    // Mulai auto refresh setiap 5 detik
+    _startAutoRefresh();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _refreshTimer?.cancel(); // Hentikan timer saat dispose
     super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted && !_loading) {
+        _loadKehadiran(silentRefresh: true);
+      }
+    });
+  }
+
+  // ===== SAVE FCM TOKEN TO BACKEND =====
+  Future<void> saveFcmToken(int siswaId) async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+
+      if (fcmToken == null) {
+        print('FCM Token is null');
+        return;
+      }
+
+      print('Saving FCM Token: $fcmToken for siswa_id: $siswaId');
+
+      final response = await http.post(
+        Uri.parse('https://projekb3.skyznode.my.id/api/save-fcm-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'siswa_id': siswaId,
+          'fcm_token': fcmToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('FCM Token saved successfully');
+      } else {
+        print('Failed to save FCM Token: ${response.statusCode}');
+        print('Response: ${response.body}');
+      }
+    } catch (e) {
+      print('Error saving FCM Token: $e');
+    }
   }
 
   void _onScroll() {
@@ -59,12 +113,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadKehadiran() async {
-    setState(() {
-      _loading = true;
-      _errorMessage = '';
-      _currentPage = 1;
-    });
+  Future<void> _loadKehadiran({bool silentRefresh = false}) async {
+    // Jika silent refresh, jangan tampilkan loading indicator
+    if (!silentRefresh) {
+      setState(() {
+        _loading = true;
+        _errorMessage = '';
+        _currentPage = 1;
+      });
+    }
 
     final result = await ApiService.getKehadiran();
 
@@ -77,6 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _allKehadiran = allData;
         _totalPages = (allData.length / _perPage).ceil();
         _kehadiran = _getPaginatedData(1);
+        _currentPage = 1; // Reset ke halaman 1 saat refresh
         _hasMoreData = _currentPage < _totalPages;
         _loading = false;
       });
@@ -127,6 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
+    _refreshTimer?.cancel(); // Hentikan auto refresh saat logout
     await ApiService.logout();
     if (!mounted) return;
 
@@ -162,6 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (confirm == true) {
+      _refreshTimer?.cancel(); // Hentikan auto refresh
       await ApiService.clearAllData();
       await SchoolConfig.clearSelectedSchool();
 
@@ -298,15 +358,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   
-                  // Pagination Info
+                  // Pagination Info & Auto Refresh Indicator
                   if (!_loading && _allKehadiran.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Text(
-                      'Menampilkan ${_kehadiran.length} dari ${_allKehadiran.length} data',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.black54,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Menampilkan ${_kehadiran.length} dari ${_allKehadiran.length} data',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.sync,
+                              size: 12,
+                              color: Colors.black54,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Auto refresh',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -364,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _loadKehadiran,
+              onPressed: () => _loadKehadiran(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFC107),
                 padding: const EdgeInsets.symmetric(
@@ -406,7 +488,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadKehadiran,
+      onRefresh: () => _loadKehadiran(),
       color: const Color(0xFFFFC107),
       child: ListView.builder(
         controller: _scrollController,

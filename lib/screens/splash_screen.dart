@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'school_selection_screen.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
@@ -36,8 +37,24 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
+    // Get FCM Token
+    _getFCMToken();
+
     // Update: Check school selection and login status
     Future.delayed(const Duration(seconds: 5), _checkInitialRoute);
+  }
+
+  // ===== GET FCM TOKEN =====
+  Future<void> _getFCMToken() async {
+    try {
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      print("FCM TOKEN: $fcmToken");
+      
+      // Opsional: Simpan token ke SharedPreferences atau kirim ke server
+      // Contoh: await ApiService.saveFCMToken(fcmToken);
+    } catch (e) {
+      print("Error getting FCM token: $e");
+    }
   }
 
   // New method: Check routing based on school selection and login status
