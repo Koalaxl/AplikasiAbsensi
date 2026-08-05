@@ -1,0 +1,2 @@
+C:/Users/USER/Documents/projek/Aplikasi_absensi/android/app/.cxx/release/4h2pf3i6/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/USER/Documents/projek/Aplikasi_absensi/android/app/.cxx/release/4h2pf3i6/x86_64/CMakeFiles/rebuild_cache.dir

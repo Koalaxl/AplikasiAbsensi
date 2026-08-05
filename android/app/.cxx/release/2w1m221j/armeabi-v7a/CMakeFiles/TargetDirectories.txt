@@ -1,0 +1,2 @@
+C:/Users/USER/Documents/projek/Aplikasi_absensi/android/app/.cxx/release/2w1m221j/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/USER/Documents/projek/Aplikasi_absensi/android/app/.cxx/release/2w1m221j/armeabi-v7a/CMakeFiles/rebuild_cache.dir
